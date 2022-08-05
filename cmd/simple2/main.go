@@ -6,14 +6,14 @@ import (
 	"log"
 	"os"
 
-	"github.com/timburks/shakes/shakespeare"
+	"github.com/timburks/shakes/pkg/shakespeare"
 	"google.golang.org/api/iterator"
 )
 
 func main() {
 	ctx := context.Background()
 	rows, err := shakespeare.QueryWordCount(ctx, &shakespeare.QueryWordCountRequest{
-		Word: "Caesar"
+		Word: "Caesar",
 	})
 	if err != nil {
 		log.Fatal(fmt.Errorf("error performing query: %v", err))
