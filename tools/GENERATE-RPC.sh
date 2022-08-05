@@ -27,5 +27,5 @@ for proto in ${ALL_PROTOS[@]}; do
 	protoc $proto --proto_path='.' \
 		--proto_path=$COMMON_PROTOS_PATH \
 		--go_opt='module=github.com/timburks/shakes/rpc' \
-		--go_out='.'
+		--go_out='./rpc'
 done
