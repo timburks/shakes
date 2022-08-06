@@ -1,33 +1,51 @@
 syntax = "proto3";
 
-package shakespeare.v1;
+package timburks.shakespeare.v1;
 
 import "google/api/annotations.proto";
 
 option go_package = "github.com/timburks/shakes/rpc;rpc";
+option java_package = "com.timburks.shakespeare.v1";
+option java_multiple_files = true;
+option java_outer_classname = "ShakesProto";
 
-message ListWordCountsRequest {
-    string word = 1;
-    int32 page_size = 2;
-    string page_token = 3;
-}
-
-message WordCount {
-    string corpus = 1;
-    int32 corpus_date = 2;
-    string word = 3;
-    int32 word_count = 4;
-}
-
-message ListWordCountsResponse {
-    repeated WordCount word_counts = 1;
-    string next_page_token = 2;
-}
-
+// The Query service performs selected BigQuery queries.
 service Query {
+    // ListWordCounts returns counts for a specified word.
     rpc ListWordCounts(ListWordCountsRequest) returns (ListWordCountsResponse) {
         option (google.api.http) = {
           get: "/v1/wordcounts"
         };
     }
 }
+
+// Request message for ListWordCounts.
+message ListWordCountsRequest {
+    // The word to match.
+    string word = 1;
+    // The maximum number of responses to return.
+    int32 page_size = 2;
+    // A token to use for paginated requests.
+    string page_token = 3;
+}
+
+// A count of words in a document.
+message WordCount {
+    // The work containing the word.
+    string corpus = 1;
+    // The date of the work containing the word.
+    int32 corpus_date = 2;
+    // The word being counted.
+    string word = 3;
+    // The number of occurrences of the word in the corpus (document).
+    int32 word_count = 4;
+}
+
+// The response value for ListWordCounts.
+message ListWordCountsResponse {
+    // The matching word counts.
+    repeated WordCount word_counts = 1;
+    // A token that can be used to get more pages of results.
+    string next_page_token = 2;
+}
+
