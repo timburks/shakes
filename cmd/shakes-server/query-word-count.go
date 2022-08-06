@@ -49,6 +49,9 @@ func (queryServer) QueryWordCount(ctx context.Context, req *rpc.QueryWordCountRe
 		}
 	} else {
 		job, err = client.JobFromID(ctx, req.PageToken)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "error getting job: %v", err)
+		}
 	}
 	jobID := job.ID()
 	fmt.Printf("The job ID is %s\n", jobID)
