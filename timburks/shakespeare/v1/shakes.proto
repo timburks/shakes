@@ -24,7 +24,7 @@ message QueryWordCountResponse {
     string next_page_token = 2;
 }
 
-service Shakespeare {
+service Query {
     rpc QueryWordCount(QueryWordCountRequest) returns (QueryWordCountResponse) {
         option (google.api.http) = {
           get: "/v1/wordcount"
