@@ -24,6 +24,6 @@ echo "Generating Envoy gRPC-JSON transcoding descriptor set for ${SERVICE_PROTOS
 protoc ${SERVICE_PROTOS[*]} \
 	--proto_path='.' \
 	--proto_path=$COMMON_PROTOS_PATH \
-    --descriptor_set_out='proto.pb' \
+	--descriptor_set_out='envoy/proto.pb' \
 	--include_imports \
-    --include_source_info
+	--include_source_info
