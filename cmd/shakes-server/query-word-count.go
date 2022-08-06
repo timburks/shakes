@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 
 	"github.com/timburks/shakes/rpc"
 	bq "google.golang.org/api/bigquery/v2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const wordCountQuery = `SELECT * FROM bigquery-public-data.samples.shakespeare WHERE word = @word ORDER BY word_count DESC;`
@@ -23,24 +24,46 @@ func wordCountParameters(req *rpc.QueryWordCountRequest) []*bq.QueryParameter {
 	}
 }
 
-func wordCountRow(schema []*bq.TableFieldSchema, row *bq.TableRow) *rpc.QueryWordCountRow {
+func wordCountRow(schema []*bq.TableFieldSchema, row *bq.TableRow) (*rpc.QueryWordCountRow, error) {
 	result := &rpc.QueryWordCountRow{}
 	for i, f := range row.F {
-		log.Printf("field %d %T %+v %s %s", i, f.V, f.V, schema[i].Name, schema[i].Type)
+		value, ok := f.V.(string)
+		if !ok {
+			return nil, status.Errorf(codes.Internal, "unexpected type in response: %T", f.V)
+		}
+
 		switch schema[i].Name {
 		case "word":
-			result.Word = f.V.(string)
+			result.Word = value
 		case "word_count":
-			v, _ := strconv.Atoi(f.V.(string))
+			v, err := strconv.Atoi(value)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "%s", err)
+			}
 			result.WordCount = int32(v)
 		case "corpus":
-			result.Corpus = f.V.(string)
+			result.Corpus = value
 		case "corpus_date":
-			v, _ := strconv.Atoi(f.V.(string))
+			v, err := strconv.Atoi(value)
 			result.CorpusDate = int32(v)
+			if err != nil {
+				return nil, status.Errorf(codes.Internal, "%s", err)
+			}
 		}
 	}
-	return result
+	return result, nil
+}
+
+func wordCountRows(response *bq.GetQueryResultsResponse) ([]*rpc.QueryWordCountRow, error) {
+	rows := make([]*rpc.QueryWordCountRow, 0)
+	for i := range response.Rows {
+		row, err := wordCountRow(response.Schema.Fields, response.Rows[i])
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "%s", err)
+		}
+		rows = append(rows, row)
+	}
+	return rows, nil
 }
 
 func (queryServer) QueryWordCount(ctx context.Context, req *rpc.QueryWordCountRequest) (*rpc.QueryWordCountResponse, error) {
@@ -49,13 +72,11 @@ func (queryServer) QueryWordCount(ctx context.Context, req *rpc.QueryWordCountRe
 		fmt.Println("GOOGLE_CLOUD_PROJECT environment variable must be set.")
 		os.Exit(1)
 	}
-
 	bqService, err := bq.NewService(ctx)
 	if err != nil {
-		log.Fatalf("bigquery.NewService: %v", err)
+		return nil, status.Errorf(codes.Internal, "%s", err)
 	}
 	jobsService := bq.NewJobsService(bqService)
-
 	useLegacySql := false
 	job := &bq.Job{
 		Configuration: &bq.JobConfiguration{
@@ -69,9 +90,8 @@ func (queryServer) QueryWordCount(ctx context.Context, req *rpc.QueryWordCountRe
 	insertCall := jobsService.Insert(projectID, job)
 	job, err = insertCall.Do()
 	if err != nil {
-		log.Fatalf("error creating job: %v", err)
+		return nil, status.Errorf(codes.Internal, "error creating job %s", err)
 	}
-
 	queryCall := jobsService.GetQueryResults(projectID, job.JobReference.JobId).Context(ctx)
 	if req.PageSize != 0 {
 		queryCall = queryCall.MaxResults(int64(req.PageSize))
@@ -81,14 +101,9 @@ func (queryServer) QueryWordCount(ctx context.Context, req *rpc.QueryWordCountRe
 	}
 	response, err := queryCall.Do()
 	if err != nil {
-		log.Fatalf("error making query: %v", err)
+		return nil, status.Errorf(codes.Internal, "error making query %s", err)
 	}
-
-	rows := make([]*rpc.QueryWordCountRow, 0)
-	for i := range response.Rows {
-		rows = append(rows, wordCountRow(response.Schema.Fields, response.Rows[i]))
-	}
-
+	rows, err := wordCountRows(response)
 	resp := &rpc.QueryWordCountResponse{
 		Rows:          rows,
 		NextPageToken: response.PageToken,
