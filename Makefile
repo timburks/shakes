@@ -5,3 +5,6 @@ all:
 	./tools/GENERATE-GAPIC.sh
 	./tools/GENERATE-CLI.sh
 	go install ./...
+
+clean:
+	rm -rf cmd/shakes/*.go gapic/*.go rpc/*.go third_party

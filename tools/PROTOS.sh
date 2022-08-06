@@ -23,6 +23,10 @@ SERVICE_PROTOS=(
 	timburks/shakespeare/v1/*.proto
 )
 
+HOSTED_PROTOS=(
+	timburks/shakespeare/v1/*.proto
+)
+
 COMMON_PROTOS_PATH='third_party/api-common-protos'
 
 function clone_common_protos {
