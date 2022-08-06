@@ -22,6 +22,15 @@ type wordCountRow struct {
 	WordCount  int64  `bigquery:"word_count"`
 }
 
+func wordCountParameters(req *rpc.QueryWordCountRequest) []bigquery.QueryParameter {
+	return []bigquery.QueryParameter{
+		{
+			Name:  "word",
+			Value: req.Word,
+		},
+	}
+}
+
 func (queryServer) QueryWordCount(ctx context.Context, req *rpc.QueryWordCountRequest) (*rpc.QueryWordCountResponse, error) {
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	if projectID == "" {
@@ -38,11 +47,7 @@ func (queryServer) QueryWordCount(ctx context.Context, req *rpc.QueryWordCountRe
 	var job *bigquery.Job
 	if req.PageToken == "" {
 		query := client.Query(wordCountQuery)
-		query.QueryConfig.Parameters = append(query.QueryConfig.Parameters,
-			bigquery.QueryParameter{
-				Name:  "word",
-				Value: req.Word,
-			})
+		query.QueryConfig.Parameters = wordCountParameters(req)
 		job, err = query.Run(ctx)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "error running query: %v", err)
