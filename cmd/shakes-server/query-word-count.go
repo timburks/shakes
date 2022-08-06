@@ -5,30 +5,42 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
-	"cloud.google.com/go/bigquery"
 	"github.com/timburks/shakes/rpc"
-	"google.golang.org/api/iterator"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	bq "google.golang.org/api/bigquery/v2"
 )
 
 const wordCountQuery = `SELECT * FROM bigquery-public-data.samples.shakespeare WHERE word = @word ORDER BY word_count DESC;`
 
-type wordCountRow struct {
-	Corpus     string `bigquery:"corpus"`
-	CorpusDate int64  `bigquery:"corpus_date"`
-	Word       string `bigquery:"word"`
-	WordCount  int64  `bigquery:"word_count"`
-}
-
-func wordCountParameters(req *rpc.QueryWordCountRequest) []bigquery.QueryParameter {
-	return []bigquery.QueryParameter{
+func wordCountParameters(req *rpc.QueryWordCountRequest) []*bq.QueryParameter {
+	return []*bq.QueryParameter{
 		{
-			Name:  "word",
-			Value: req.Word,
+			Name:           "word",
+			ParameterValue: &bq.QueryParameterValue{Value: req.Word},
+			ParameterType:  &bq.QueryParameterType{Type: "STRING"},
 		},
 	}
+}
+
+func wordCountRow(schema []*bq.TableFieldSchema, row *bq.TableRow) *rpc.QueryWordCountRow {
+	result := &rpc.QueryWordCountRow{}
+	for i, f := range row.F {
+		log.Printf("field %d %T %+v %s %s", i, f.V, f.V, schema[i].Name, schema[i].Type)
+		switch schema[i].Name {
+		case "word":
+			result.Word = f.V.(string)
+		case "word_count":
+			v, _ := strconv.Atoi(f.V.(string))
+			result.WordCount = int32(v)
+		case "corpus":
+			result.Corpus = f.V.(string)
+		case "corpus_date":
+			v, _ := strconv.Atoi(f.V.(string))
+			result.CorpusDate = int32(v)
+		}
+	}
+	return result
 }
 
 func (queryServer) QueryWordCount(ctx context.Context, req *rpc.QueryWordCountRequest) (*rpc.QueryWordCountResponse, error) {
@@ -38,49 +50,48 @@ func (queryServer) QueryWordCount(ctx context.Context, req *rpc.QueryWordCountRe
 		os.Exit(1)
 	}
 
-	client, err := bigquery.NewClient(ctx, projectID)
+	bqService, err := bq.NewService(ctx)
 	if err != nil {
-		log.Fatalf("bigquery.NewClient: %v", err)
+		log.Fatalf("bigquery.NewService: %v", err)
 	}
-	defer client.Close()
+	jobsService := bq.NewJobsService(bqService)
 
-	var job *bigquery.Job
-	if req.PageToken == "" {
-		query := client.Query(wordCountQuery)
-		query.QueryConfig.Parameters = wordCountParameters(req)
-		job, err = query.Run(ctx)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error running query: %v", err)
-		}
-	} else {
-		job, err = client.JobFromID(ctx, req.PageToken)
-		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "error getting job: %v", err)
-		}
+	useLegacySql := false
+	job := &bq.Job{
+		Configuration: &bq.JobConfiguration{
+			Query: &bq.JobConfigurationQuery{
+				Query:           wordCountQuery,
+				QueryParameters: wordCountParameters(req),
+				UseLegacySql:    &useLegacySql,
+			},
+		},
 	}
-	jobID := job.ID()
-	fmt.Printf("The job ID is %s\n", jobID)
+	insertCall := jobsService.Insert(projectID, job)
+	job, err = insertCall.Do()
+	if err != nil {
+		log.Fatalf("error creating job: %v", err)
+	}
 
-	iter, err := job.Read(ctx)
+	queryCall := jobsService.GetQueryResults(projectID, job.JobReference.JobId).Context(ctx)
+	if req.PageSize != 0 {
+		queryCall = queryCall.MaxResults(int64(req.PageSize))
+	}
+	if req.PageToken != "" {
+		queryCall = queryCall.PageToken(req.PageToken)
+	}
+	response, err := queryCall.Do()
+	if err != nil {
+		log.Fatalf("error making query: %v", err)
+	}
+
 	rows := make([]*rpc.QueryWordCountRow, 0)
-	for i := int32(0); i < req.PageSize; i++ {
-		var row wordCountRow
-		err := iter.Next(&row)
-		if err == iterator.Done {
-			break
-		}
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "error iterating through results: %v", err)
-		}
-		rows = append(rows, &rpc.QueryWordCountRow{
-			Corpus:     row.Corpus,
-			Word:       row.Word,
-			WordCount:  int32(row.WordCount),
-			CorpusDate: int32(row.CorpusDate),
-		})
+	for i := range response.Rows {
+		rows = append(rows, wordCountRow(response.Schema.Fields, response.Rows[i]))
 	}
-	return &rpc.QueryWordCountResponse{
+
+	resp := &rpc.QueryWordCountResponse{
 		Rows:          rows,
-		NextPageToken: job.ID(),
-	}, nil
+		NextPageToken: response.PageToken,
+	}
+	return resp, nil
 }
