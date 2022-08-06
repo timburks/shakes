@@ -14,7 +14,7 @@ import (
 
 const wordCountQuery = `SELECT * FROM bigquery-public-data.samples.shakespeare WHERE word = @word ORDER BY word_count DESC;`
 
-func wordCountParameters(req *rpc.QueryWordCountRequest) []*bq.QueryParameter {
+func wordCountParameters(req *rpc.ListWordCountsRequest) []*bq.QueryParameter {
 	return []*bq.QueryParameter{
 		{
 			Name:           "word",
@@ -24,8 +24,8 @@ func wordCountParameters(req *rpc.QueryWordCountRequest) []*bq.QueryParameter {
 	}
 }
 
-func wordCountRow(schema []*bq.TableFieldSchema, row *bq.TableRow) (*rpc.QueryWordCountRow, error) {
-	result := &rpc.QueryWordCountRow{}
+func wordCountRow(schema []*bq.TableFieldSchema, row *bq.TableRow) (*rpc.WordCount, error) {
+	result := &rpc.WordCount{}
 	for i, f := range row.F {
 		value, ok := f.V.(string)
 		if !ok {
@@ -54,8 +54,8 @@ func wordCountRow(schema []*bq.TableFieldSchema, row *bq.TableRow) (*rpc.QueryWo
 	return result, nil
 }
 
-func wordCountRows(response *bq.GetQueryResultsResponse) ([]*rpc.QueryWordCountRow, error) {
-	rows := make([]*rpc.QueryWordCountRow, 0)
+func wordCountRows(response *bq.GetQueryResultsResponse) ([]*rpc.WordCount, error) {
+	rows := make([]*rpc.WordCount, 0)
 	for i := range response.Rows {
 		row, err := wordCountRow(response.Schema.Fields, response.Rows[i])
 		if err != nil {
@@ -66,7 +66,7 @@ func wordCountRows(response *bq.GetQueryResultsResponse) ([]*rpc.QueryWordCountR
 	return rows, nil
 }
 
-func (queryServer) QueryWordCount(ctx context.Context, req *rpc.QueryWordCountRequest) (*rpc.QueryWordCountResponse, error) {
+func (queryServer) ListWordCounts(ctx context.Context, req *rpc.ListWordCountsRequest) (*rpc.ListWordCountsResponse, error) {
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	if projectID == "" {
 		fmt.Println("GOOGLE_CLOUD_PROJECT environment variable must be set.")
@@ -104,8 +104,8 @@ func (queryServer) QueryWordCount(ctx context.Context, req *rpc.QueryWordCountRe
 		return nil, status.Errorf(codes.Internal, "error making query %s", err)
 	}
 	rows, err := wordCountRows(response)
-	resp := &rpc.QueryWordCountResponse{
-		Rows:          rows,
+	resp := &rpc.ListWordCountsResponse{
+		WordCounts:    rows,
 		NextPageToken: response.PageToken,
 	}
 	return resp, nil

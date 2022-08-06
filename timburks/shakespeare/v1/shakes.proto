@@ -6,28 +6,28 @@ import "google/api/annotations.proto";
 
 option go_package = "github.com/timburks/shakes/rpc;rpc";
 
-message QueryWordCountRequest {
+message ListWordCountsRequest {
     string word = 1;
     int32 page_size = 2;
     string page_token = 3;
 }
 
-message QueryWordCountRow {
+message WordCount {
     string corpus = 1;
     int32 corpus_date = 2;
     string word = 3;
     int32 word_count = 4;
 }
 
-message QueryWordCountResponse {
-    repeated QueryWordCountRow rows = 1;
+message ListWordCountsResponse {
+    repeated WordCount word_counts = 1;
     string next_page_token = 2;
 }
 
 service Query {
-    rpc QueryWordCount(QueryWordCountRequest) returns (QueryWordCountResponse) {
+    rpc ListWordCounts(ListWordCountsRequest) returns (ListWordCountsResponse) {
         option (google.api.http) = {
-          get: "/v1/wordcount"
+          get: "/v1/wordcounts"
         };
     }
 }
