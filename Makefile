@@ -13,3 +13,10 @@ clean:
 
 protos:
 	./tools/GENERATE-ENVOY-DESCRIPTORS.sh
+
+cloudrun:
+	gcloud run deploy --source . 
+
+gateway:
+	gcloud api-gateway api-configs create shakes-config --api=shakes --project=nerdvana --grpc-files=proto.pb,api_config.yaml
+	gcloud api-gateway gateways create shakes --api=shakes --api-config=shakes-config --location=us-west2 --project=nerdvana

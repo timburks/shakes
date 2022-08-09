@@ -1,0 +1,17 @@
+# The configuration schema is defined by the service.proto file.
+# https://github.com/googleapis/googleapis/blob/master/google/api/service.proto
+
+type: google.api.Service
+config_version: 3
+name: "*.apigateway.nerdvana.cloud.goog"
+title: API Gateway + Cloud Run gRPC
+apis:
+  - name: timburks.shakespeare.v1.Query
+usage:
+  rules:
+  - selector: timburks.shakespeare.v1.Query.ListWordCounts
+    allow_unregistered_calls: true
+backend:
+  rules:
+    - selector: "*"
+      address: grpcs://shakes-nbuv3ljuva-uw.a.run.app
