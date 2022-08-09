@@ -1,17 +1,12 @@
 package main
 
 import (
-	"flag"
-	"fmt"
 	"log"
 	"net"
+	"os"
 
 	"github.com/timburks/shakes/rpc"
 	"google.golang.org/grpc"
-)
-
-var (
-	port = flag.Int("port", 8080, "The server port")
 )
 
 type queryServer struct {
@@ -19,13 +14,18 @@ type queryServer struct {
 }
 
 func main() {
-	flag.Parse()
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
+	log.Printf("listening on port %s", port)
+	grpcServer := grpc.NewServer()
 	rpc.RegisterQueryServer(grpcServer, &queryServer{})
-	grpcServer.Serve(lis)
+	if err = grpcServer.Serve(lis); err != nil {
+		log.Fatal(err)
+	}
 }

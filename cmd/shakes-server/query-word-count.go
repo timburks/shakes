@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/timburks/shakes/rpc"
+	"golang.org/x/oauth2/google"
 	bq "google.golang.org/api/bigquery/v2"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -69,8 +69,14 @@ func wordCountRows(response *bq.GetQueryResultsResponse) ([]*rpc.WordCount, erro
 func (queryServer) ListWordCounts(ctx context.Context, req *rpc.ListWordCountsRequest) (*rpc.ListWordCountsResponse, error) {
 	projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	if projectID == "" {
-		fmt.Println("GOOGLE_CLOUD_PROJECT environment variable must be set.")
-		os.Exit(1)
+		credentials, err := google.FindDefaultCredentials(context.Background())
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "%s", err)
+		}
+		projectID = credentials.ProjectID
+	}
+	if projectID == "" {
+		return nil, status.Errorf(codes.Internal, "GOOGLE_CLOUD_PROJECT environment variable must be set.")
 	}
 	bqService, err := bq.NewService(ctx)
 	if err != nil {
