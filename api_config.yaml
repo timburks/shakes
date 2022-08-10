@@ -3,7 +3,7 @@
 
 type: google.api.Service
 config_version: 3
-name: "*.apigateway.nerdvana.cloud.goog"
+name: "*.apigateway.timburks-test.cloud.goog"
 title: API Gateway + Cloud Run gRPC
 apis:
   - name: timburks.shakespeare.v1.Query
@@ -14,4 +14,4 @@ usage:
 backend:
   rules:
     - selector: "*"
-      address: grpcs://shakes-nbuv3ljuva-uw.a.run.app
+      address: grpcs://shakes-wkq75xgrza-wl.a.run.app
