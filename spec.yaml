@@ -1,7 +1,7 @@
-name: shakes
+name: query
 description: "Interesting aspects of the works of William Shakespeare"
 methods:
-- name: GetWorksContainingWord
+- name: ListWordCounts
   description: "Find the works that include a specified word, ordered by frequency of occurrence"
   query: "SELECT * FROM bigquery-public-data.samples.shakespeare where word = '$1' ORDER BY word_count DESC"
   inputs:
@@ -9,4 +9,5 @@ methods:
   outputs:
   - corpus: string
     corpus_date: int64
+    word: string
     word_count: int64
