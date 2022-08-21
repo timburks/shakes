@@ -5,7 +5,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/timburks/shakes/rpc"
+	"github.com/timburks/shakespeare/rpc"
 	"google.golang.org/grpc"
 )
 

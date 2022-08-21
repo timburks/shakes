@@ -24,13 +24,13 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install github.com/googleapis/gapic-generator-go/cmd/protoc-gen-go_cli@latest
 
 # This directory contains the generated CLI
-GENERATED='cmd/shakes'
+GENERATED='cmd/shakespeare'
 
 echo "Generating Go client CLI for ${SERVICE_PROTOS[@]}"
 protoc ${SERVICE_PROTOS[*]} \
 	--proto_path='.' \
 	--proto_path=$COMMON_PROTOS_PATH \
-  	--go_cli_opt='root=shakes' \
-  	--go_cli_opt='gapic=github.com/timburks/shakes/gapic' \
+  	--go_cli_opt='root=shakespeare' \
+  	--go_cli_opt='gapic=github.com/timburks/shakespeare/gapic' \
 	--go_cli_out=$GENERATED
 

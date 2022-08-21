@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/timburks/shakes/rpc"
+	"github.com/timburks/shakespeare/rpc"
 	"golang.org/x/oauth2/google"
 	bq "google.golang.org/api/bigquery/v2"
 	"google.golang.org/grpc/codes"

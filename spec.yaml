@@ -1,13 +1,29 @@
-name: query
+api: shakespeare
+version: v1
+organization: timburks
 description: "Interesting aspects of the works of William Shakespeare"
 methods:
 - name: ListWordCounts
-  description: "Find the works that include a specified word, ordered by frequency of occurrence"
-  query: "SELECT * FROM bigquery-public-data.samples.shakespeare where word = '$1' ORDER BY word_count DESC"
-  inputs:
-  - word: string 
-  outputs:
-  - corpus: string
-    corpus_date: int64
-    word: string
-    word_count: int64
+  slug: wordcounts
+  description: Find the works that include a specified word, ordered by frequency of occurrence.
+  query: "SELECT * FROM bigquery-public-data.samples.shakespeare where word = @word ORDER BY word_count DESC"
+  parameters:
+  - name: word
+    type: string
+    description: The word to match.
+  responses:
+    name: WordCount
+    description: A count of words in a document.
+    fields:
+    - name: corpus
+      type: string
+      description: The work containing the word.
+    - name: corpus_date
+      type: integer
+      description: The date of the work containing the word.
+    - name: word
+      type: string
+      description: The word being counted.
+    - name: word_count
+      type: integer
+      description: The number of occurrences of the word.

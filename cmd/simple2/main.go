@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/timburks/shakes/pkg/shakespeare"
+	"github.com/timburks/shakespeare/pkg/shakespeare"
 	"google.golang.org/api/iterator"
 )
 

@@ -26,6 +26,6 @@ for proto in ${ALL_PROTOS[@]}; do
 	echo "Generating Go types for $proto"
 	protoc $proto --proto_path='.' \
 		--proto_path=$COMMON_PROTOS_PATH \
-		--go_opt='module=github.com/timburks/shakes/rpc' \
+		--go_opt='module=github.com/timburks/shakespeare/rpc' \
 		--go_out='./rpc'
 done

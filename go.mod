@@ -1,4 +1,4 @@
-module github.com/timburks/shakes
+module github.com/timburks/shakespeare
 
 go 1.18
 

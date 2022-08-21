@@ -26,9 +26,9 @@ echo "Generating Go client library for ${SERVICE_PROTOS[@]}"
 protoc ${SERVICE_PROTOS[*]} \
 	--proto_path='.' \
 	--proto_path=$COMMON_PROTOS_PATH \
-	--go_gapic_opt='go-gapic-package=github.com/timburks/shakes/gapic;gapic' \
+	--go_gapic_opt='go-gapic-package=github.com/timburks/shakespeare/gapic;gapic' \
 	--go_gapic_opt='grpc-service-config=gapic/grpc_service_config.json' \
-	--go_gapic_opt='module=github.com/timburks/shakes' \
+	--go_gapic_opt='module=github.com/timburks/shakespeare' \
 	--go_gapic_out='.'
 
 gofmt -s -w gapic/*.go

@@ -4,18 +4,18 @@ package timburks.shakespeare.v1;
 
 import "google/api/annotations.proto";
 
-option go_package = "github.com/timburks/shakes/rpc;rpc";
+option go_package = "github.com/timburks/shakespeare/rpc;rpc";
 option java_package = "com.timburks.shakespeare.v1";
 option java_multiple_files = true;
-option java_outer_classname = "ShakesProto";
+option java_outer_classname = "ShakespeareProto";
 
 // The Query service performs selected BigQuery queries.
 service Query {
-    // ListWordCounts returns counts for a specified word.
+    // ListWordCounts finds the works that include a specified word, ordered by frequency of occurrence.
     rpc ListWordCounts(ListWordCountsRequest) returns (ListWordCountsResponse) {
         option (google.api.http) = {
-          get: "/v1/wordcounts"
-        };
+	        get: "/v1/wordcounts"
+	    };
     }
 }
 
@@ -29,6 +29,14 @@ message ListWordCountsRequest {
     string page_token = 3;
 }
 
+// Response message for ListWordCounts.
+message ListWordCountsResponse {
+    // The matching word_counts.
+    repeated WordCount word_counts = 1;
+    // A token that can be used to get more pages of results.
+    string next_page_token = 2;
+}
+
 // A count of words in a document.
 message WordCount {
     // The work containing the word.
@@ -37,15 +45,6 @@ message WordCount {
     int32 corpus_date = 2;
     // The word being counted.
     string word = 3;
-    // The number of occurrences of the word in the corpus (document).
+    // The number of occurrences of the word.
     int32 word_count = 4;
 }
-
-// The response value for ListWordCounts.
-message ListWordCountsResponse {
-    // The matching word counts.
-    repeated WordCount word_counts = 1;
-    // A token that can be used to get more pages of results.
-    string next_page_token = 2;
-}
-
